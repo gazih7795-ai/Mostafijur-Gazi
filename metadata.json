@@ -1,0 +1,6 @@
+{
+  "name": "Tom Fight",
+  "description": "3D open-world action fighting adventure game featuring Tom, real-time combat, missions, and city exploration.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

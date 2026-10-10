@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>TOM FIGHT</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="game-container">
+    <canvas id="webgl-canvas"></canvas>
+
+    <!-- 2D Damage Text Overlay -->
+    <div id="damage-container"></div>
+
+    <!-- Floating 2D Hit Effect Animation Overlay -->
+    <div id="hit-effects-container" class="hit-effects-container"></div>
+
+    <!-- Full-Screen Dynamic Hit Flash Overlay -->
+    <div id="hit-flash-overlay" class="hit-flash-overlay"></div>
+
+    <!-- Main Game HUD Overlay -->
+    <div id="hud">
+      <!-- Top Row -->
+      <div class="hud-top">
+        <!-- Top Left Group: Minimap & Player Status Card -->
+        <div class="hud-top-left">
+          <!-- Real-Time 2D Mini-Map (Tappable for Street vs Neighborhood Zoom) -->
+          <div id="minimap-container" class="minimap-container street-view" title="Tap to toggle zoom: Street View vs Neighborhood View">
+            <canvas id="minimap-canvas" width="115" height="115"></canvas>
+            <div id="minimap-compass" class="minimap-compass"><span id="compass-arrow">▲</span> N</div>
+            <div id="minimap-zoom-badge" class="minimap-zoom-badge">2.4x</div>
+            <div id="minimap-tag" class="minimap-tag">STREET VIEW</div>
+          </div>
+
+          <!-- Player Status Card -->
+          <div class="player-card">
+            <div class="player-avatar">T</div>
+            <div class="bars-container">
+              <div class="name-level-row">
+                <span class="player-name">TOM</span>
+                <span id="player-level-badge" class="level-badge">LV.1</span>
+              </div>
+              <!-- Health Bar -->
+              <div class="bar-wrapper">
+                <div id="hp-fill" class="hp-fill" style="width: 100%;"></div>
+              </div>
+              <!-- Energy Bar -->
+              <div class="bar-wrapper">
+                <div id="energy-fill" class="energy-fill" style="width: 100%;"></div>
+              </div>
+              <!-- Coins & XP -->
+              <div class="stats-row">
+                <div class="coin-pill">🪙 <span id="coin-count">100</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Center Mission Objective Banner & Persistent Task Queue -->
+        <div class="hud-mission-group">
+          <div id="mission-hud-banner" class="mission-hud-banner">
+            <div id="mission-hud-title" class="mission-hud-title">OPEN WORLD</div>
+            <div id="mission-hud-obj" class="mission-hud-obj">Explore the city, collect coins & find mission beacons!</div>
+            <div id="mission-hud-dist" class="mission-hud-dist"></div>
+          </div>
+
+          <!-- Persistent Task Queue Sub-Objectives List -->
+          <div id="task-queue-container" class="task-queue-container">
+            <div class="task-queue-header">
+              <span class="task-queue-badge">📋 OBJECTIVES</span>
+              <span id="task-queue-progress" class="task-queue-counter">0/1</span>
+              <button id="hud-daily-tag" class="hud-daily-tag" title="Daily Tasks Progress">⭐ <span id="hud-daily-counter">0/3</span> DAILIES</button>
+            </div>
+            <ul id="task-queue-list" class="task-queue-list">
+              <!-- Dynamically populated checkbox sub-objectives -->
+            </ul>
+          </div>
+        </div>
+
+        <!-- Top Right Actions -->
+        <div class="hud-right-actions">
+          <!-- Real-Time FPS Performance Counter Overlay -->
+          <div id="perf-overlay" class="perf-overlay" style="display: none;">
+            <div class="perf-header">
+              <span class="perf-dot"></span>
+              <span id="perf-fps-val" class="perf-fps-val">60</span>
+              <span class="perf-fps-unit">FPS</span>
+            </div>
+            <div id="perf-ms-val" class="perf-ms-val">16.6ms</div>
+          </div>
+
+          <button id="btn-hud-missions" class="icon-btn" title="Missions">📜</button>
+          <button id="btn-hud-shop" class="icon-btn" title="Upgrades">🥋</button>
+          <button id="btn-hud-photo" class="icon-btn" title="Photo Mode">📷</button>
+          <button id="btn-pause" class="icon-btn" title="Pause">⏸️</button>
+        </div>
+      </div>
+
+      <!-- Boss / Target Health Bar (Top Center) -->
+      <div id="boss-hud">
+        <div id="boss-name" class="boss-name">TITAN KURO</div>
+        <div class="boss-hp-bar">
+          <div id="boss-hp-fill" class="boss-hp-fill" style="width: 100%;"></div>
+        </div>
+      </div>
+
+      <!-- Combo Counter (Right Center) -->
+      <div id="combo-display">
+        <div id="combo-hits" class="combo-hits">3x</div>
+        <div id="combo-label" class="combo-label">COMBO!</div>
+      </div>
+
+      <!-- Mission Interaction Prompt -->
+      <div id="interaction-prompt">TAP TO START MISSION</div>
+
+      <!-- Tutorial Toast -->
+      <div id="tutorial-hint">Use left joystick to move, drag screen to rotate camera!</div>
+
+      <!-- Bottom Controls Row -->
+      <div class="hud-bottom">
+        <!-- Left: Virtual Joystick -->
+        <div id="joystick-zone">
+          <div class="joystick-base">
+            <div id="joystick-stick" class="joystick-stick"></div>
+          </div>
+        </div>
+
+        <!-- Right: Action Buttons -->
+        <div id="actions-zone">
+          <!-- Block Button -->
+          <div id="btn-block" class="action-btn btn-block">
+            <span class="btn-icon">🛡️</span>
+            <span class="btn-label">Block</span>
+          </div>
+
+          <!-- Jump Button -->
+          <div id="btn-jump" class="action-btn btn-jump">
+            <span class="btn-icon">⬆️</span>
+            <span class="btn-label">Jump</span>
+          </div>
+
+          <!-- Special Attack Button -->
+          <div id="btn-special" class="action-btn btn-special">
+            <span class="btn-icon">⚡</span>
+            <span class="btn-label">Special</span>
+            <div id="special-cooldown-overlay" class="btn-cooldown-overlay"></div>
+          </div>
+
+          <!-- Dodge Dash Button -->
+          <div id="btn-dodge" class="action-btn btn-dodge">
+            <span class="btn-icon">💨</span>
+            <span class="btn-label">Dodge</span>
+          </div>
+
+          <!-- Kick Button -->
+          <div id="btn-kick" class="action-btn btn-kick">
+            <span class="btn-icon">🦵</span>
+            <span class="btn-label">Kick</span>
+          </div>
+
+          <!-- Punch Button (Primary) -->
+          <div id="btn-punch" class="action-btn btn-punch">
+            <span class="btn-icon">👊</span>
+            <span class="btn-label">Punch</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Camera Drag Touch Zone -->
+    <div id="camera-touch-zone"></div>
+
+    <!-- Main Menu Screen -->
+    <div id="main-menu-screen">
+      <div class="title-container">
+        <div class="main-title">TOM FIGHT</div>
+        <div class="sub-title">3D Open-World Martial Arts Action</div>
+      </div>
+      <div class="menu-buttons">
+        <button id="btn-menu-play" class="btn-primary">PLAY / CONTINUE</button>
+        <button id="btn-menu-missions" class="btn-secondary">MISSIONS</button>
+        <button id="btn-menu-shop" class="btn-secondary">DOJO UPGRADES</button>
+        <button id="btn-menu-settings" class="btn-secondary">SETTINGS</button>
+      </div>
+    </div>
+
+    <!-- Pause Modal -->
+    <div id="pause-modal" class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-header">
+          <div class="modal-title">GAME PAUSED</div>
+          <button class="close-btn">&times;</button>
+        </div>
+        <div class="menu-buttons" style="width: 100%; margin: 0 auto;">
+          <button id="btn-pause-resume" class="btn-primary">RESUME</button>
+          <button id="btn-pause-photo" class="btn-secondary">📷 PHOTO MODE</button>
+          <button id="btn-pause-restart" class="btn-secondary">RETURN TO DOJO</button>
+          <button id="btn-pause-quit" class="btn-secondary">MAIN MENU</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dojo Upgrades & Skins Shop Modal -->
+    <div id="shop-modal" class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-header">
+          <div class="modal-title">DOJO UPGRADES & SKINS</div>
+          <button class="close-btn">&times;</button>
+        </div>
+
+        <div class="upgrades-list">
+          <!-- Max HP Upgrade -->
+          <div class="upgrade-card">
+            <div class="upgrade-info">
+              <div class="upgrade-title">Vitality (Max HP)</div>
+              <div class="upgrade-desc">+25 Max Health per tier</div>
+              <div id="hp-tier-text" class="upgrade-level">Level 0/5</div>
+            </div>
+            <button id="btn-buy-hp" class="btn-buy">🪙 <span id="hp-cost-text">80 Coins</span></button>
+          </div>
+
+          <!-- Attack Power Upgrade -->
+          <div class="upgrade-card">
+            <div class="upgrade-info">
+              <div class="upgrade-title">Iron Fist (Attack Power)</div>
+              <div class="upgrade-desc">+5 Base Strike Damage</div>
+              <div id="atk-tier-text" class="upgrade-level">Level 0/5</div>
+            </div>
+            <button id="btn-buy-atk" class="btn-buy">🪙 <span id="atk-cost-text">100 Coins</span></button>
+          </div>
+
+          <!-- Special Power Upgrade -->
+          <div class="upgrade-card">
+            <div class="upgrade-info">
+              <div class="upgrade-title">Dragon Fury (Special Attack)</div>
+              <div class="upgrade-desc">+15 Shockwave Explosion Damage</div>
+              <div id="sp-tier-text" class="upgrade-level">Level 0/5</div>
+            </div>
+            <button id="btn-buy-sp" class="btn-buy">🪙 <span id="sp-cost-text">120 Coins</span></button>
+          </div>
+        </div>
+
+        <!-- Fighter Skins Section -->
+        <div style="margin-top: 20px;">
+          <div style="font-size: 15px; font-weight: 800; margin-bottom: 8px;">FIGHTER SKINS</div>
+          <div class="skins-grid">
+            <div id="skin-card-classic" class="skin-card selected">
+              <div class="skin-swatch" style="background: #ef4444;"></div>
+              <div class="skin-name">Classic Red</div>
+              <div style="font-size: 11px; color: #10b981;">OWNED</div>
+            </div>
+            <div id="skin-card-ninja" class="skin-card">
+              <div class="skin-swatch" style="background: #18181b; border-color: #7c3aed;"></div>
+              <div class="skin-name">Shadow Ninja</div>
+              <div style="font-size: 11px; color: #facc15;">200 Coins</div>
+            </div>
+            <div id="skin-card-cyber" class="skin-card">
+              <div class="skin-swatch" style="background: #f59e0b; border-color: #06b6d4;"></div>
+              <div class="skin-name">Cyber Gold</div>
+              <div style="font-size: 11px; color: #facc15;">350 Coins</div>
+            </div>
+            <div id="skin-card-neon" class="skin-card">
+              <div class="skin-swatch" style="background: #0284c7; border-color: #38bdf8;"></div>
+              <div class="skin-name">Neon Blue</div>
+              <div style="font-size: 11px; color: #facc15;">500 Coins</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Missions Selector Modal -->
+    <div id="missions-modal" class="modal-overlay">
+      <div class="modal-content missions-modal-content">
+        <div class="modal-header">
+          <div class="modal-title">MISSION BOARD</div>
+          <button class="close-btn">&times;</button>
+        </div>
+
+        <!-- Persistent Daily Mission Streak Calendar Widget -->
+        <div id="mission-streak-calendar" class="mission-streak-calendar"></div>
+
+        <!-- Daily Mission System (3 Randomized Tasks Per Day) -->
+        <div id="daily-missions-container" class="daily-missions-container"></div>
+
+        <!-- Mission Board Controls: Difficulty Filters & Bounty Generation -->
+        <div class="mission-board-controls">
+          <div class="mission-difficulty-filters">
+            <button class="diff-filter-btn active" data-difficulty="all">ALL</button>
+            <button class="diff-filter-btn diff-filter-easy" data-difficulty="Easy">🟢 EASY</button>
+            <button class="diff-filter-btn diff-filter-hard" data-difficulty="Hard">🟠 HARD</button>
+            <button class="diff-filter-btn diff-filter-boss" data-difficulty="Boss">🔴 BOSS</button>
+          </div>
+          <button id="btn-refresh-bounties" class="btn-refresh-bounties" title="Generate New Bounty Missions">
+            🎲 REFRESH BOUNTIES
+          </button>
+        </div>
+
+        <div id="missions-modal-list" class="missions-list"></div>
+      </div>
+    </div>
+
+    <!-- Mission Complete Modal -->
+    <div id="mission-complete-modal" class="modal-overlay">
+      <div class="modal-content">
+        <div class="reward-stamp">🏆</div>
+        <div id="complete-modal-title" class="modal-title" style="color: #facc15;">MISSION COMPLETE!</div>
+        <div id="complete-modal-reward" style="font-size: 16px; margin: 12px 0; font-weight: 800; color: #38bdf8;">+150 Coins | +100 EXP</div>
+        <button id="btn-complete-continue" class="btn-primary" style="margin-top: 10px; width: 100%;">CONTINUE EXPLORING</button>
+      </div>
+    </div>
+
+    <!-- Daily Login Reward Modal -->
+    <div id="daily-reward-modal" class="modal-overlay">
+      <div class="modal-content daily-reward-content">
+        <div class="reward-stamp daily-stamp">🎁</div>
+        <div class="modal-title daily-reward-title">DAILY LOGIN REWARD!</div>
+        <div class="daily-reward-streak-badge">
+          <span id="daily-streak-text">DAY 1 STREAK</span>
+        </div>
+        <p class="daily-reward-subtitle">Welcome back to the city! Here is your daily fighter bonus:</p>
+        <div class="daily-reward-box">
+          <div class="daily-reward-coin-icon">🪙</div>
+          <div id="daily-reward-amount" class="daily-reward-amount">+100 COINS</div>
+        </div>
+        <button id="btn-claim-daily" class="btn-primary btn-claim-daily">CLAIM BONUS & PLAY</button>
+      </div>
+    </div>
+
+    <!-- Defeat Screen Modal -->
+    <div id="defeat-modal" class="modal-overlay">
+      <div class="modal-content" style="text-align: center; border-color: #ef4444;">
+        <div class="reward-stamp">💀</div>
+        <div class="modal-title" style="color: #ef4444;">DEFEATED</div>
+        <p style="font-size: 13px; color: #cbd5e1; margin: 12px 0;">Tom was knocked down in battle. Train harder and seek revenge!</p>
+        <button id="btn-defeat-respawn" class="btn-primary" style="margin-top: 10px; width: 100%;">RESPAWN AT DOJO</button>
+      </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-header">
+          <div class="modal-title">SETTINGS</div>
+          <button class="close-btn">&times;</button>
+        </div>
+        <div class="settings-row">
+          <span class="settings-label">Master Volume</span>
+          <input type="range" id="setting-master-vol" class="settings-input" min="0" max="1" step="0.05" value="0.8">
+        </div>
+        <div class="settings-row">
+          <span class="settings-label">Sound Effects</span>
+          <input type="range" id="setting-sfx-vol" class="settings-input" min="0" max="1" step="0.05" value="0.8">
+        </div>
+        <div class="settings-row">
+          <span class="settings-label">Music Volume</span>
+          <input type="range" id="setting-music-vol" class="settings-input" min="0" max="1" step="0.05" value="0.45">
+        </div>
+        <div class="settings-row">
+          <span class="settings-label">Graphics Quality</span>
+          <select id="setting-quality" style="padding: 6px; border-radius: 8px; background: #1e293b; color: #fff; border: 1px solid #475569;">
+            <option value="low">Low (High FPS)</option>
+            <option value="medium" selected>Medium (Balanced)</option>
+            <option value="high">High (Maximum Details)</option>
+          </select>
+        </div>
+        <div class="settings-row">
+          <div class="settings-label-group">
+            <span class="settings-label">Show FPS Counter</span>
+            <span class="settings-subtext">Monitor frame rate & performance</span>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="setting-fps-toggle">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <!-- Export / Import Save Data Section -->
+        <div class="settings-section-divider"></div>
+        <div class="settings-section-header">
+          <span class="settings-section-title">💾 SAVE DATA BACKUP</span>
+          <span class="settings-subtext">Export or restore your progress JSON</span>
+        </div>
+
+        <div class="save-backup-controls">
+          <button id="btn-export-save" class="btn-save-action btn-save-export" title="Copy current save data to clipboard">
+            <span class="btn-icon">📋</span> Copy / Export Save
+          </button>
+          <button id="btn-toggle-import" class="btn-save-action btn-save-import" title="Paste and restore save data">
+            <span class="btn-icon">📥</span> Import Save
+          </button>
+        </div>
+
+        <!-- Collapsible Save Data Area -->
+        <div id="save-data-panel" class="save-data-panel" style="display: none;">
+          <div class="save-data-header-row">
+            <span id="save-data-panel-title" class="save-panel-badge">SAVE DATA JSON</span>
+            <button id="btn-quick-copy" class="btn-mini-copy" title="Copy text to clipboard">Copy Text</button>
+          </div>
+          <textarea id="save-data-json-text" class="save-data-textarea" rows="4" spellcheck="false" placeholder="Your save data JSON will appear here or paste backup JSON..."></textarea>
+          <div id="save-data-feedback" class="save-feedback-msg" style="display: none;"></div>
+          <div class="save-data-action-row">
+            <button id="btn-confirm-import" class="btn-primary btn-save-confirm" style="display: none;">APPLY RESTORE</button>
+            <button id="btn-close-save-panel" class="btn-secondary btn-save-dismiss">Hide Box</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Photo Mode Flash Animation Overlay -->
+    <div id="photo-flash-overlay" class="photo-flash-overlay"></div>
+
+    <!-- Photo Mode Rule-of-Thirds Grid Overlay -->
+    <div id="photo-grid-overlay" class="photo-grid-overlay" style="display: none;">
+      <div class="grid-line grid-v1"></div>
+      <div class="grid-line grid-v2"></div>
+      <div class="grid-line grid-h1"></div>
+      <div class="grid-line grid-h2"></div>
+    </div>
+
+    <!-- Full-Screen Interactive Photo Mode Overlay -->
+    <div id="photo-mode-overlay" class="photo-mode-overlay" style="display: none;">
+      <!-- 360-Degree Touch Orbit Surface (Spans entire screen) -->
+      <div id="photo-camera-touch-surface" class="photo-touch-surface"></div>
+
+      <!-- Clean View Tap Surface (Tap to restore UI when hidden) -->
+      <div id="photo-clean-tap-restore" class="photo-clean-tap" style="display: none;">
+        <span class="photo-clean-badge">👁️ Tap anywhere to show controls</span>
+      </div>
+
+      <!-- Top Toolbar -->
+      <div id="photo-top-bar" class="photo-top-bar">
+        <div class="photo-title-pill">
+          <span class="photo-rec-dot"></span>
+          <span class="photo-title-text">PHOTO MODE</span>
+          <span class="photo-title-sub">360° CAM</span>
+        </div>
+
+        <div class="photo-top-actions">
+          <button id="btn-photo-toggle-ui" class="photo-tool-btn" title="Hide UI / Clean Screen">👁️</button>
+          <button id="btn-photo-grid" class="photo-tool-btn" title="Composition Grid">🔲</button>
+          <button id="btn-photo-reset-cam" class="photo-tool-btn" title="Reset Camera View">🔄</button>
+          <button id="btn-photo-exit" class="photo-tool-btn photo-btn-exit" title="Exit Photo Mode">✕</button>
+        </div>
+      </div>
+
+      <!-- Bottom Floating Controls Panel -->
+      <div id="photo-controls-container" class="photo-controls-container">
+        <!-- Control Tabs Row -->
+        <div class="photo-panel-card">
+          <!-- Angles Presets -->
+          <div class="photo-section-row">
+            <span class="photo-section-label">ANGLES</span>
+            <div class="photo-scroll-strip">
+              <button class="photo-pill-btn photo-angle-btn active" data-angle="front">Front Action</button>
+              <button class="photo-pill-btn photo-angle-btn" data-angle="close">Portrait</button>
+              <button class="photo-pill-btn photo-angle-btn" data-angle="low">Low Epic</button>
+              <button class="photo-pill-btn photo-angle-btn" data-angle="side">Side Kick</button>
+              <button class="photo-pill-btn photo-angle-btn" data-angle="birds">Bird's Eye</button>
+            </div>
+          </div>
+
+          <!-- Poses Selector -->
+          <div class="photo-section-row">
+            <span class="photo-section-label">POSES</span>
+            <div class="photo-scroll-strip">
+              <button class="photo-pill-btn photo-pose-btn active" data-pose="frozen">Frozen Action</button>
+              <button class="photo-pill-btn photo-pose-btn" data-pose="guard">Fighter Guard</button>
+              <button class="photo-pill-btn photo-pose-btn" data-pose="kick">Dragon Kick</button>
+              <button class="photo-pill-btn photo-pose-btn" data-pose="punch">Dragon Punch</button>
+              <button class="photo-pill-btn photo-pose-btn" data-pose="block">Iron Block</button>
+              <button class="photo-pill-btn photo-pose-btn" data-pose="victory">Victory Fist</button>
+              <button class="photo-pill-btn photo-pose-btn" data-pose="meditation">Zen Stance</button>
+            </div>
+          </div>
+
+          <!-- Filters Selector -->
+          <div class="photo-section-row">
+            <span class="photo-section-label">FILTERS</span>
+            <div class="photo-scroll-strip">
+              <button class="photo-pill-btn photo-filter-btn active" data-filter="none">Natural</button>
+              <button class="photo-pill-btn photo-filter-btn" data-filter="cinematic">Cinematic</button>
+              <button class="photo-pill-btn photo-filter-btn" data-filter="noir">Noir B&W</button>
+              <button class="photo-pill-btn photo-filter-btn" data-filter="cyberpunk">Cyberpunk</button>
+              <button class="photo-pill-btn photo-filter-btn" data-filter="golden">Golden Hour</button>
+              <button class="photo-pill-btn photo-filter-btn" data-filter="anime">Anime Vivid</button>
+            </div>
+          </div>
+
+          <!-- Sliders Adjustments (Zoom, Height, FOV) -->
+          <div class="photo-sliders-grid">
+            <div class="photo-slider-item">
+              <span class="photo-slider-name">🔍 Zoom</span>
+              <input id="photo-slider-zoom" type="range" min="1.5" max="14.0" step="0.1" value="4.8" class="photo-range-slider">
+            </div>
+            <div class="photo-slider-item">
+              <span class="photo-slider-name">↕️ Height</span>
+              <input id="photo-slider-height" type="range" min="0.4" max="2.6" step="0.05" value="1.35" class="photo-range-slider">
+            </div>
+            <div class="photo-slider-item">
+              <span class="photo-slider-name">📐 Lens FOV</span>
+              <input id="photo-slider-fov" type="range" min="30" max="85" step="1" value="60" class="photo-range-slider">
+            </div>
+          </div>
+        </div>
+
+        <!-- Camera Shutter Trigger Button -->
+        <div class="photo-shutter-row">
+          <button id="btn-photo-shutter" class="photo-shutter-btn" title="Take Photo">
+            <div class="shutter-inner">
+              <span class="shutter-icon">📸</span>
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- In-Game Photo Preview Modal -->
+    <div id="photo-preview-modal" class="modal-overlay" style="display: none;">
+      <div class="modal-content photo-preview-content">
+        <div class="modal-header">
+          <div class="modal-title">📸 PHOTO CAPTURED</div>
+          <button class="close-btn">&times;</button>
+        </div>
+        <div class="photo-frame">
+          <img id="photo-preview-img" class="photo-preview-img" alt="Captured Screenshot" />
+        </div>
+        <div id="photo-preview-meta" class="photo-preview-meta"></div>
+        <div class="photo-preview-actions">
+          <button id="btn-photo-download" class="btn-primary photo-download-btn">📥 SAVE PHOTO (PNG)</button>
+          <button id="btn-photo-retake" class="btn-secondary">🔄 RETAKE</button>
+          <button id="btn-photo-done" class="btn-secondary">✅ DONE</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Game Scripts (Completely Local & Offline) -->
+  <script src="three.min.js"></script>
+  <script src="audio.js"></script>
+  <script src="world.js"></script>
+  <script src="character.js"></script>
+  <script src="enemy.js"></script>
+  <script src="combat.js"></script>
+  <script src="mission-tracker.js"></script>
+  <script src="daily-missions.js"></script>
+  <script src="mission.js"></script>
+  <script src="controls.js"></script>
+  <script src="minimap.js"></script>
+  <script src="settings.js"></script>
+  <script src="photo-mode.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>

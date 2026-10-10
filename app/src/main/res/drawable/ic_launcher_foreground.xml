@@ -1,0 +1,38 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Outer energy burst / shield diamond -->
+    <path
+        android:pathData="M54,22 L78,42 L72,74 L54,86 L36,74 L30,42 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="30"
+                android:startY="22"
+                android:endX="78"
+                android:endY="86"
+                android:type="linear">
+                <item android:color="#F59E0B" android:offset="0.0" />
+                <item android:color="#EF4444" android:offset="0.6" />
+                <item android:color="#991B1B" android:offset="1.0" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <!-- Inner dynamic clenched fist / strike silhouette in crisp white & gold -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M44,40 C44,38 46,36 48.5,36 C50,36 51.5,37 52,38.5 C52.5,37 54,36 55.5,36 C57,36 58.5,37 59,38.5 C59.5,37 61,36 62.5,36 C64.5,36 66,37.5 66,39.5 L66,54 C66,61 61,66 54,66 C47,66 42,61 42,54 L42,46 C42,43.5 43.5,41.5 45.5,41 L45.5,46 C45.5,47.5 47,48.5 48.5,48.5 C50,48.5 51,47.5 51,46 L51,40 Z" />
+    <!-- Impact bolt / sparks -->
+    <path
+        android:fillColor="#FEF08A"
+        android:pathData="M54,28 L57,35 L64,36 L59,41 L60,48 L54,44 L48,48 L49,41 L44,36 L51,35 Z" />
+    <!-- Dynamic speed slash lines -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M34,32 L40,30 L36,36 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M74,32 L68,30 L72,36 Z" />
+</vector>
